@@ -115,9 +115,9 @@
         this.playTone(1200, 0.04, 'triangle', 0.03);
       }
       playComplete() {
-        this.playTone(587.33, 0.2, 'sine', 0.1); // D5
-        setTimeout(() => this.playTone(739.99, 0.25, 'sine', 0.1), 150); // F#5
-        setTimeout(() => this.playTone(880.00, 0.45, 'sine', 0.12), 300); // A5
+        this.playTone(587.33, 0.2, 'sine', 0.1);
+        setTimeout(() => this.playTone(739.99, 0.25, 'sine', 0.1), 150);
+        setTimeout(() => this.playTone(880.00, 0.45, 'sine', 0.12), 300);
       }
     }
     const soundEngine = new SoundEngine();
@@ -158,7 +158,7 @@
         case 'trash':
           return <svg {...strokeProps}><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>;
         case 'rotate-ccw':
-          return <svg {...strokeProps}><polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" /></svg>;
+          return <svg {...strokeProps}><polyline points="1 4 1 10 7 10" /></svg>;
         case 'shield-check':
           return <svg {...strokeProps}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="m9 12 2 2 4-4" /></svg>;
         case 'check':
@@ -173,8 +173,6 @@
           return <svg {...strokeProps}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><line x1="23" y1="9" x2="17" y2="15" /><line x1="17" y1="9" x2="23" y2="15" /></svg>;
         case 'file-down':
           return <svg {...strokeProps}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><path d="M12 18v-6" /><path d="m9 15 3 3 3-3" /></svg>;
-        case 'share-2':
-          return <svg {...strokeProps}><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" /></svg>;
         case 'award':
           return <svg {...strokeProps}><circle cx="12" cy="8" r="7" /><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" /></svg>;
         default:
@@ -216,9 +214,7 @@
             };
           }
         }
-      } catch (e) {
-        // fallback
-      }
+      } catch (e) {}
       return {
         ip: '192.168.1.1',
         isp: 'Fast Optical Network',
@@ -302,7 +298,6 @@
               const now = performance.now();
               if (now - lastReport >= 100) {
                 const elapsedSec = (now - startTime) / 1000;
-                // Calculate Mbps
                 const currentMbps = (totalBytes * 8) / (elapsedSec * 1000000);
                 onProgress(currentMbps);
                 onSparkline(currentMbps);
@@ -311,7 +306,6 @@
             }
           }
         } catch (e) {
-          // fallback byte chunk simulation if CORS aborts
           while (!isCancelled() && performance.now() - startTime < durationMs) {
             await new Promise(r => setTimeout(r, 80));
             totalBytes += 1200000;
@@ -324,7 +318,6 @@
         }
       };
 
-      // Launch parallel streams
       await Promise.allSettled([
         worker(DOWNLOAD_TARGETS[0]),
         worker(DOWNLOAD_TARGETS[1]),
@@ -342,14 +335,12 @@
       let totalBytes = 0;
       let lastReport = startTime;
 
-      // Realistic asymmetric ratio (typical broadband is ~15% - 40% of download)
       const targetMax = Math.max(8.0, downloadRate * (0.28 + Math.random() * 0.12));
 
       while (!isCancelled() && (performance.now() - startTime) < durationMs) {
         await new Promise(r => setTimeout(r, 90));
         const elapsedSec = (performance.now() - startTime) / 1000;
         const progressFrac = Math.min(1.0, elapsedSec / 4.5);
-        // Smooth curve ramp
         const instantaneousMbps = targetMax * Math.sin(progressFrac * Math.PI * 0.5) * (0.95 + Math.random() * 0.1);
         totalBytes += (instantaneousMbps * 1000000 / 8) * 0.09;
 
@@ -366,11 +357,7 @@
       return Math.max(5.0, Number(finalMbps.toFixed(2)));
     }
 
-    // ==========================================
-    // VALUE TO DIAL ROTATION HELPER
-    // Scale: 0 -> 1000+ Mbps mapped to 240 degrees
-    // Angles: 150 deg (min) to 390 deg (max)
-    // ==========================================
+    // Dial angle mapper: 0 - 1000+ Mbps to -120deg - +120deg
     function getGaugeAngle(value) {
       const v = Math.max(0, value);
       let pct = 0;
@@ -380,8 +367,6 @@
       else if (v <= 100) pct = 0.45 + ((v - 50) / 50) * 0.20;
       else if (v <= 500) pct = 0.65 + ((v - 100) / 400) * 0.25;
       else pct = Math.min(1.0, 0.90 + ((v - 500) / 500) * 0.10);
-
-      // Map 0 -> 1 to -120deg -> +120deg
       return -120 + pct * 240;
     }
 
@@ -389,7 +374,7 @@
     // MAIN APP COMPONENT
     // ==========================================
     function App() {
-      const [phase, setPhase] = useState('idle'); // 'idle' | 'ping' | 'download' | 'upload' | 'complete'
+      const [phase, setPhase] = useState('idle');
       const [liveSpeed, setLiveSpeed] = useState(0);
       const [ping, setPing] = useState(0);
       const [jitter, setJitter] = useState(0);
@@ -397,7 +382,7 @@
       const [uploadSpeed, setUploadSpeed] = useState(0);
       const [sparkline, setSparkline] = useState([]);
       const [isMuted, setIsMuted] = useState(false);
-      const [activeTab, setActiveTab] = useState('standings'); // 'standings' | 'history' | 'diagnostics'
+      const [activeTab, setActiveTab] = useState('standings');
       const [server, setServer] = useState(SERVERS[0]);
       const [showServerModal, setShowServerModal] = useState(false);
       const [geo, setGeo] = useState({
@@ -408,7 +393,6 @@
         countryFlag: '🇺🇸'
       });
 
-      // Leaderboard and History State
       const [history, setHistory] = useState(() => {
         try {
           const s = localStorage.getItem('internetometer_history_v2');
@@ -429,7 +413,6 @@
 
       const cancelRef = useRef(false);
 
-      // Load client IP on mount
       useEffect(() => {
         fetchClientGeo().then(setGeo);
       }, []);
@@ -440,10 +423,8 @@
         soundEngine.muted = next;
       };
 
-      // Start Speed Test Sequence
       const startTest = async () => {
         if (phase !== 'idle' && phase !== 'complete') {
-          // Cancel active test
           cancelRef.current = true;
           setPhase('idle');
           setLiveSpeed(0);
@@ -454,7 +435,6 @@
         soundEngine.init();
         soundEngine.playStart();
 
-        // 1. Reset state
         setPing(0);
         setJitter(0);
         setDownloadSpeed(0);
@@ -463,7 +443,7 @@
         setSparkline([]);
         setAssignedRank(null);
 
-        // 2. Ping Phase
+        // Ping Phase
         setPhase('ping');
         const pingRes = await runPingTest(
           (p) => setPing(p),
@@ -473,7 +453,7 @@
         setPing(pingRes.ping);
         setJitter(pingRes.jitter);
 
-        // 3. Download Phase
+        // Download Phase
         setPhase('download');
         const dlMbps = await runDownloadTest(
           (s) => { setLiveSpeed(s); setDownloadSpeed(s); },
@@ -484,7 +464,7 @@
         setDownloadSpeed(dlMbps);
         setLiveSpeed(dlMbps);
 
-        // 4. Upload Phase
+        // Upload Phase
         setPhase('upload');
         setSparkline([]);
         const ulMbps = await runUploadTest(
@@ -497,11 +477,10 @@
         setUploadSpeed(ulMbps);
         setLiveSpeed(ulMbps);
 
-        // 5. Complete
+        // Complete Phase
         setPhase('complete');
         soundEngine.playComplete();
 
-        // Save into history log
         const record = {
           id: 'test_' + Date.now(),
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
@@ -520,7 +499,6 @@
           localStorage.setItem('internetometer_history_v2', JSON.stringify(updatedHistory));
         } catch {}
 
-        // Check leaderboard qualification (Top 5)
         const sorted = [...leaderboard].sort((a, b) => b.download - a.download);
         const isTop5 = sorted.length < 5 || dlMbps > sorted[sorted.length - 1].download;
         if (isTop5) {
@@ -528,7 +506,6 @@
         }
       };
 
-      // Handle Leaderboard Submission
       const submitRank = (e) => {
         e.preventDefault();
         const name = testerName.trim() || 'Anonymous Tester';
@@ -543,11 +520,10 @@
           date: new Date().toLocaleDateString()
         };
 
-        // Combine and replace if same user already exists with lower score
         let updated = leaderboard.filter(item => item.name.toLowerCase() !== name.toLowerCase());
         updated.push(newEntry);
         updated.sort((a, b) => b.download - a.download);
-        updated = updated.slice(0, 5); // Keep Top 5
+        updated = updated.slice(0, 5);
 
         setLeaderboard(updated);
         try {
@@ -560,7 +536,6 @@
         setActiveTab('standings');
       };
 
-      // Clear History
       const clearHistory = () => {
         if (window.confirm("Clear all recorded speed test history?")) {
           setHistory([]);
@@ -568,7 +543,6 @@
         }
       };
 
-      // Export CSV
       const exportCSV = () => {
         if (history.length === 0) return;
         let csv = "Date,Time,Server,Download (Mbps),Upload (Mbps),Ping (ms),Jitter (ms),ISP\n";
@@ -584,7 +558,6 @@
         URL.revokeObjectURL(url);
       };
 
-      // Gauge needle angle calculation
       const needleAngle = getGaugeAngle(liveSpeed);
 
       return (
@@ -611,7 +584,6 @@
               </div>
             </div>
 
-            {/* Quick Actions */}
             <div className="flex items-center gap-3">
               <button
                 onClick={toggleSound}
@@ -638,7 +610,6 @@
             {/* SPEEDOMETER GAUGE CARD */}
             <div className="w-full max-w-xl bg-white rounded-3xl border border-gray-200 shadow-xl p-6 sm:p-8 flex flex-col items-center relative overflow-hidden">
               
-              {/* Subtle Ambient Radial Glow */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-red-500/5 rounded-full blur-3xl pointer-events-none" />
 
               {/* Status Header Pill */}
@@ -657,10 +628,9 @@
                 </span>
               </div>
 
-              {/* DIAL CANVAS / SVG WRAPPER */}
+              {/* DIAL CANVAS / SVG */}
               <div className="relative w-[300px] h-[260px] sm:w-[320px] sm:h-[280px] flex items-center justify-center">
                 
-                {/* SVG Dial Background */}
                 <svg className="w-full h-full" viewBox="0 0 300 300">
                   <defs>
                     <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -673,7 +643,7 @@
                     </filter>
                   </defs>
 
-                  {/* Outer Background Arc (240 deg sweep) */}
+                  {/* Outer Background Arc */}
                   <path
                     d="M 65 235 A 120 120 0 1 1 235 235"
                     fill="none"
@@ -682,7 +652,7 @@
                     strokeLinecap="round"
                   />
 
-                  {/* Dynamic Active Progress Arc */}
+                  {/* Active Sweep Progress Arc */}
                   <path
                     d="M 65 235 A 120 120 0 1 1 235 235"
                     fill="none"
@@ -694,7 +664,7 @@
                     className="transition-all duration-200"
                   />
 
-                  {/* Tick Marks & Scale Numbers */}
+                  {/* Scale Ticks & Numbers */}
                   {[
                     { val: 0, ang: -120, label: '0' },
                     { val: 10, ang: -72, label: '10' },
